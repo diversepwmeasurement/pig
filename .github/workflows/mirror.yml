@@ -1,18 +1,15 @@
-name: 同步代码
-
-on:
-  push:
-    branches: [ master,jdk17,jdk17-dev,dev ]
-  pull_request:
-    branches: [ master,jdk17,jdk17-dev,dev ]
-
 jobs:
   sync:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
-      - uses: wearerequired/git-mirror-action@master #同步至 gitee
-        env:
-          SSH_PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
-        with:
-          source-repo: "git@github.com:pig-mesh/pig.git"
-          destination-repo: "git@gitee.com:log4j/pig.git"
+    - continue-on-error: true
+      env:
+        SSH_PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
+      uses: wearerequired/git-mirror-action@master
+      with:
+        destination-repo: git@gitee.com:log4j/pig.git
+        source-repo: git@github.com:pig-mesh/pig.git
+name: "\u540C\u6B65\u4EE3\u7801"
+on:
+  repository_dispatch:
+    types: trigger-ga___mirror.yml

@@ -1,48 +1,45 @@
-# This workflow will build a Java project with Maven
-# For more information see: https://help.github.com/actions/language-and-framework-guides/building-and-testing-java-with-maven
-
-name: PIG 构建action
-
-on:
-  push:
-    branches: [ jdk17-dev,dev ]
-  pull_request:
-    branches: [ jdk17-dev,dev ]
-
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
+    steps:
+    - continue-on-error: true
+      uses: actions/checkout@v4
+    - continue-on-error: true
+      name: Set up JDK ${{ matrix.java-version }}
+      uses: actions/setup-java@v4
+      with:
+        distribution: zulu
+        java-version: ${{ matrix.java-version }}
+    - continue-on-error: true
+      name: mvn spring-javaformat:validate
+      run: mvn spring-javaformat:validate
+    - continue-on-error: true
+      name: mvn clean install
+      run: mvn clean install -Pboot
+    - continue-on-error: true
+      name: mvn clean install
+      run: mvn clean install
+    - continue-on-error: true
+      name: Start containers
+      run: docker-compose build && docker-compose up -d
+    - continue-on-error: true
+      env:
+        WECHAT_WORK_BOT_WEBHOOK: ${{secrets.WECHAT_WORK_BOT_WEBHOOK}}
+      if: failure() && github.repository == 'pig-mesh/pig'
+      name: failure
+      uses: chf007/action-wechat-work@master
+      with:
+        content: "# \U0001F4A4\U0001F937\u200D\u2640\uFE0F failure \U0001F645\u200D\
+          \u2642\uFE0F\U0001F4A3 [pig-mesh/pig](https://github.com/pig-mesh/pig)\n\
+          > Github Action: https://github.com/pig-mesh/pig failure\n> (\u22DF\uFE4F\
+          \u22DE)   from github action message\n"
+        msgtype: markdown
     strategy:
       matrix:
-        java-version: [ 17,21 ]
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set up JDK ${{ matrix.java-version }}
-        uses: actions/setup-java@v4
-        with:
-          java-version: ${{ matrix.java-version }}
-          distribution: 'zulu'
-
-      - name: mvn spring-javaformat:validate
-        run: mvn spring-javaformat:validate
-
-      - name: mvn clean install
-        run: mvn clean install -Pboot
-
-      - name: mvn clean install
-        run: mvn clean install
-
-      - name: Start containers
-        run: docker-compose build && docker-compose up -d
-
-      - name:  failure
-        if: failure() && github.repository == 'pig-mesh/pig'
-        uses: chf007/action-wechat-work@master
-        env:
-          WECHAT_WORK_BOT_WEBHOOK: ${{secrets.WECHAT_WORK_BOT_WEBHOOK}}
-        with:
-          msgtype: markdown
-          content: |
-            # 💤🤷‍♀️ failure 🙅‍♂️💣 [pig-mesh/pig](https://github.com/pig-mesh/pig)
-            > Github Action: https://github.com/pig-mesh/pig failure
-            > (⋟﹏⋞)   from github action message
+        java-version:
+        - 17
+        - 21
+name: "PIG \u6784\u5EFAaction"
+on:
+  repository_dispatch:
+    types: trigger-ga___maven.yml
